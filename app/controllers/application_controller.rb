@@ -1,0 +1,27 @@
+class ApplicationController < ActionController::Base
+  protect_from_forgery
+  # before_filter :register
+
+  private
+
+  def current_player
+    Player.find(session[:player_id])
+  end
+  
+  def getIndex (x,y)
+    return y*10 + x
+  end
+
+  def getCoords (index)
+    x = index%10
+    y = index/10
+    return [x,y]
+  end
+  # protected
+
+    # def register
+      # unless session[:session_id]
+        # redirect_to register_url, notice: "Please Register"
+      # end
+    # end
+end

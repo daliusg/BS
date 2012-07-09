@@ -1,0 +1,14 @@
+<%# This is setup_last.js.erb - Used to prompt to start the game%>
+
+$('#my_stats').html("All ships have successfully been placed!");
+
+$('#my_messages').empty();
+$('#my_messages').append("<div id=\"left_message\"></div>")
+$('#my_messages #left_message').html("The P45 Bot goes first");
+$('#my_messages #left_message').append("<p>Are you ready to get your game on?</p>");
+
+$('#my_messages').append("<div id=\"right_message\"></div>");
+$('#my_messages #right_message').append("<div id=\"button\"></div>");
+$('#right_message #button').html("<%=j button_to "Battle On!", 
+                                          start_path, class: "button2", 
+                                          method: :post, remote: true %>");

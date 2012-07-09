@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Battleship</title>
+  <%= stylesheet_link_tag    "application", :media => "all" %>
+  <%= javascript_include_tag "application" %>
+  <%= csrf_meta_tags %>
+</head>
+<body class='<%= controller.controller_name %>'>
+  
+  <!-- Logo across the top of the screen -->
+  <div id="banner">
+    <%= image_tag("logo2.jpg") %>
+  </div>
+
+  <!-- The main layout, could be a startup login/intro screen, the game while being played, -->
+  <!-- or some sort of exit screen with a summary of what happened -->
+  <div id="main">
+      <%= yield %>
+  </div>
+
+</body>
+</html>

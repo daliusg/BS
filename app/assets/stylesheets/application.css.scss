@@ -1,0 +1,129 @@
+/*
+ * This is a manifest file that'll be compiled into application.css, which will include all the files
+ * listed below.
+ *
+ * Any CSS and SCSS file within this directory, lib/assets/stylesheets, vendor/assets/stylesheets,
+ * or vendor/assets/stylesheets of plugins, if any, can be referenced here using a relative path.
+ *
+ * You're free to add application-wide styles to this file and they'll appear at the top of the
+ * compiled file, but it's generally better to create a new file per style scope.
+ *
+ *= require_self
+ *= require_tree .
+ */
+
+body {
+  background-color: #222;
+  color: #0F1;
+  font-family: verdana, helvetica, sans-serif;
+  font-size: 16px;
+  margin: 0px;
+}
+
+p, ol, ul, td {
+  font-family: verdana, arial, helvetica, sans-serif;
+  font-size: 13px;
+  line-height: 18px; }
+
+a {
+  color: #227;
+  &:visited {
+    color: #666; }
+  &:hover {
+    color: #f11; } 
+  }
+
+#banner {
+  background: #000;
+  padding: 5px;
+  text-align: center;
+}
+
+#game {
+  height: 400px;
+  margin-top: 10px;
+
+  #my_stats {
+    width: 12%;
+    height: 100%;
+    margin-left: 1%;
+    margin-right: 4%;
+    float: left;
+    background-color: #444;
+    border-radius: 8px;
+    -webkit-box-shadow: -1px 1px 2px 3px #555;
+  }
+  #my_board {
+    position: relative;
+    width: 31%;
+    height: 100%;
+    float: left;
+  }
+  #enemy_board {
+    position: relative;
+    width: 31%;
+    height: 100%;
+    margin-left: 5%;
+    float: left;
+  }
+  #enemy_stats {
+    width: 13%;
+    height: 100%;
+    margin-left: 2%;
+    float: left;
+    background-color: #444;
+    border-radius: 8px;
+    -webkit-box-shadow: -1px 1px 2px 3px #555;
+  }
+}
+
+#messages {
+  position: relative;
+  height: 75px;
+  margin: 15px 5px;
+  font-size: 24px;
+  color: #000;
+
+  #my_messages {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 45%;
+    height: 100%;
+    margin-left: 2%;
+    background-color: #888;
+    border-radius: 8px;
+    -webkit-box-shadow: -1px 1px 2px 3px #555;
+
+    p{
+      font-size: 14px;
+    }
+
+    #left_message{
+      width: 50%;
+      margin-left: 5%;
+      float: left;
+
+      p{
+        font-size: 18px;
+      }
+    }
+    #right_message{
+      width: 20%;
+      float: left;
+      margin-top: 40px;
+    }
+    
+  }
+  #enemy_messages{
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 45%;
+    height: 100%;
+    margin-right: 2%;
+    background-color: #888;
+    border-radius: 8px;
+    -webkit-box-shadow: -1px 1px 2px 3px #555;
+  }
+} 

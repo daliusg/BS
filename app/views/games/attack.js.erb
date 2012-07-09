@@ -1,0 +1,13 @@
+
+<% if !session[:ok_to_fire] %>
+  $('#enemy_stats > p').remove();
+  $('#enemy_stats').append("<p>Tsk, tsk, tsk...  Wait your turn!</p>");
+  $('#enemy_stats p').hide();
+  $('#enemy_stats p').show(100);
+<% else %>
+
+$('#enemy_messages').html("You entered coordinates: " + "<%=j @xCoord %>" + ", " + "<%=j @yCoord %>" );
+
+$('#enemy_messages').append('<p><%= @r_body %></p>');
+
+<% end %>

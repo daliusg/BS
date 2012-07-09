@@ -1,0 +1,15 @@
+<%= form_for(@player, url: {action: 'create'}, html: {method: :post}, remote: true) do |f| %>
+  <div id="input_fields">
+    <div class="field">
+      <%= f.label :name, class: "player_label" %>
+      <%= f.text_field :name, size: 30, placeholder: 'Please enter your name' %>
+    </div>
+    <div class="field">
+      <%= f.label :email, class: "player_label" %>
+      <%= f.text_field :email, size: 30 , placeholder: 'Please enter an email address' %>
+    </div>
+  </div>
+  <div id="button">
+    <%= f.submit 'Submit', class: "button2" %>
+  </div>
+<% end %>

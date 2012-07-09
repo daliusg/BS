@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  botID: 1
+  player_id: 1
+  turn: 1
+
+two:
+  botID: 1
+  player_id: 1
+  turn: 1

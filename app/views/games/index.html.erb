@@ -1,0 +1,43 @@
+<div id="game">
+  <%# Left half is My Board, with my ships, and relevant stats %>
+  <div id="my_stats"></div>   
+  <div id="my_board">                 
+    <div class="board"></div>
+    <div id="ships"></div>
+  </div>     
+  
+  <%# Right half is Enemy's Board, with hits/misses, and relevant stats %>
+  <div id="enemy_board">                    
+    <div class="board"></div>
+    <div id="targets"></div>
+  </div>    
+  <div id="enemy_stats"></div>   
+</div>
+
+<%# Areas to display messages while the game is being played %>
+<div id="messages">
+  <%# If you come to the index page without having registered to play then a 
+      message will be displayed with a "start game" button that will call the  
+      'new' game action to initiate a new game %>
+  <% if !session[:game_id]  %>
+    <div id="register">
+        <div id="text">
+          <h1>Are you prepared to take on the Platform 45 Battleship Bot?</h1>
+        </div>
+        <div id="button">
+          <%= button_to "Let's Do it!", 
+              new_player_path, 
+              class: "button2", 
+              method: :get,
+              remote: true %>
+        </div>
+    </div>
+    <div id="my_messages" style="display: none;"></div>
+    <div id="enemy_messages" style="display: none;"></div>
+  <% else  %>
+    <%# TODO: update logic for what happens here if somebody shows already started a game %>
+    <%# Messages regarding my fleet & enemy fleet %>
+    <div id="my_messages"></div>
+    <div id="enemy_messages"></div>
+  <% end %>
+</div>

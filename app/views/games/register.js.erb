@@ -1,0 +1,26 @@
+<%# QUESTION WHETHER THIS FILE IS NECESSARY, if all that happens is debegging
+    render firedUpon can be called from within controller %>
+
+
+<%# The following lines are temp code to display what the JSON response is %>
+<% if session[:debug] == true %>
+  $('#my_stats > p').remove();
+  $('#my_stats').append("<p>JSON returned:  " +
+                        "<%=j @r_code %>, <%=j @r_message %>, " +
+                        "<%=j @r_body %></p>" +
+                        "<p>id:<%=j @P45_id %></p>" +
+                        "<p>x:<%=j @xCoord %></p>" +
+                        "<p>y:<%=j @yCoord %></p>"); 
+  <% if @P45_id != nil %>
+    $('#my_stats').append("<p>Game ID returned!</p>");
+  <% end %>
+  <% if @xCoord == nil || @yCoord == nil %>
+    $('#my_stats').append("<p style=\"color: red\">X/Y Coordinates <em>not</em> returned!</p>");
+  <% end %>
+<% end %>
+
+<%# This is a temp workaround since the P45 Server is not sending x,y coords%>
+<% @xCoord = 4 %>
+<% @yCoord = 3 %>
+
+<% render(template: "games/firedUpon") %>

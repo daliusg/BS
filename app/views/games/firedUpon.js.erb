@@ -1,0 +1,31 @@
+<%# This file is not currently being used %>
+
+<%# Assuming P45 server is fixed and X,Y Coords get sent, need to update
+    board, stats, etc with P45's firing. %>
+<%# first turn x-y coords into an index that can be used to select
+    the appropriate 'target' element %>
+ $index = <%= @yCoord * 10 + @xCoord %>;
+
+<%# Now must determine if this is going to be a 'hit' or 'miss'
+    1 - Determine if ship is occupying this spot
+    2 - If not, board doesn't have to be updated
+      a - Can add message saying X,Y is a miss!, update stats?
+    3 - If hit, then mark ship as hit - Does P45 get an update on this????
+      a - update stats, check if game over
+    4 - If game not over, then it's my turn to fire a missile %>
+
+<%# This is how you would select an enemy target. Use '.ship' to select my ship
+    but will have to figure out something other than .eq() since not all 
+    squares on the board have a ship (unlike the enemy board, where all 
+      squares have targets...)  %>
+$('.target').eq(10).addClass("hit"); 
+
+
+
+<%# Game then turns to me, allowing me to pick a target, which will 
+    generate a nuke request, with a response of hit/miss/etc 
+    appropriate game stats need to be updated %>
+
+<%# P45 will then fire again (I assume without need for prompt?) 
+    and thus this loop continues until end of game...  %>
+

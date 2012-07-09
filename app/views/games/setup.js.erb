@@ -1,0 +1,7 @@
+<%# This is setup.js.erb - Used to set up ships %>
+
+// Convert the ruby ship array to javascript format
+var js_ship = <%="['#{@ship.join('\',\'')}']" %>;
+
+// Call the method already with the client to set up the ships
+window.setupMyShips(js_ship, "<%=j @shipFlag %>", <%= @redo %>);

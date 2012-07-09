@@ -1,0 +1,5 @@
+<%# This file calls for the display of the user name/email registration form%>
+
+$('#register').hide();
+$('#messages').append("<div id=\"register2\"></div>");
+$('#register2').html("<%=j render 'form'%>");  
