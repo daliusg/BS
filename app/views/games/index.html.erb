@@ -1,6 +1,10 @@
 <div id="game">
   <%# Left half is My Board, with my ships, and relevant stats %>
-  <div id="my_stats"></div>   
+  <div id="my_stats">
+    <div class="hits"></div>
+    <div class="misses"></div>
+    <div class="sunk"></div>
+  </div>  
   <div id="my_board">                 
     <div class="board"></div>
     <div id="ships"></div>
@@ -11,7 +15,11 @@
     <div class="board"></div>
     <div id="targets"></div>
   </div>    
-  <div id="enemy_stats"></div>   
+  <div id="enemy_stats">   
+    <div class="hits"></div>
+    <div class="misses"></div>
+    <div class="sunk"></div>
+  </div>
 </div>
 
 <%# Areas to display messages while the game is being played %>

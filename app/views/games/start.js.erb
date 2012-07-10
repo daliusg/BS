@@ -1,4 +1,27 @@
-<%# start.js.erb - The JS handles the first shot fired by P45 upon 
-    registration. It displays the results and prompts the user to
-    fire back, thus beginning the back and forth volley of the game %>
+<%# start.js.erb - This file displays the results of P45's 1st firing
+                  and prompts the user to fire back, thus beginning the
+                  back and forth volley of the game %>
+
+$('#my_stats').empty();
+$('#my_messages').empty();
+
+window.enemyAttack(<%= @index %>, <%=j @hit %>, <%=j @ship %>, <%= @sunk %>);
+
+var sunk_ships = 
+  <% if @sunk_ships != nil %>
+    <%="['#{@sunk_ships.join('\',\'')}']" %>
+  <% else %>
+    <%= nil %>
+  <% end %>;
+
+window.updateMyStats(<%= @my_hits %>, <%= @my_misses %>, sunk_ships);
+
+window.yourTurn();
+
+// realistically, this is not happening on the first fire!
+// if <@#= finished %> {
+  // window.gameOver();
+// }
+
+
 

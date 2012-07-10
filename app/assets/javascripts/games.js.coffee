@@ -81,22 +81,22 @@ window.setupMyShips = (ship, shipFlag, redo) ->
     $('#my_messages').html("Setup: " + name)
 
     if redo
-      $('#my_messages').append("<p>Sorry, but that spot is taken!  Please " +
+      $('#my_messages').append("<p>Invalid placement!  Please " +
           "click on the square where you would like to place the bow of:  " + 
-          name + "( " + length + " long)</p>")  
+          "your " + name + "( " + length + " long)</p>")  
     else
       $('#my_messages').append("<p>Please click on the square where you would " +
-                             "like to place the bow of:  " + name + "( " +length+
-                             " long)</p>")
+                             "like to place the bow of your " + name + 
+                             "( " + length + " long)</p>")
 
   else if shipFlag == "direction"
-    if redo
-      $('#my_messages > p').empty().html("Sorry, but that would either place " +
-        "the " + name + " on top of another ship or on a diagonal!  Please " +
-        "click a square which is in the direction you would like the ship's " +
-        "stern to lie.")
-    else
-      $('#my_messages > p').empty().html("Please click a square which is in " +
+    #if redo
+    #  $('#my_messages > p').empty().html("Sorry, but that would either place " +
+    #    "the " + name + " on top of another ship or on a diagonal!  Please " +
+    #    "click a square which is in the direction you would like the ship's " +
+    #    "stern to lie.")
+    #else
+    $('#my_messages > p').empty().html("Please click a square which is in " +
                             "the direction you would like the ship's stern " +
                             "to lie.")
   
@@ -106,7 +106,7 @@ window.setupMyShips = (ship, shipFlag, redo) ->
     # For each one, mark with identifiable class, move it to correct position
     # then reclassify as 'ship' class so it can be displayed correctly
     for i in [0...length]
-      $('#ships').append($('<div/>').addClass('shipPlacing'))
+      $('#ships').append($('<div>').addClass('shipPlacing'))
       $shipSquare = $('.shipPlacing')
       placeShip($shipSquare, i)
       $shipSquare.removeClass('shipPlacing').addClass('ship')
@@ -125,7 +125,7 @@ window.setupMyShips = (ship, shipFlag, redo) ->
 # This 'target' will be used to mark hits/misses
 setupEnemyBoard = ->
   for i in [0...window.squareCount]
-    $('#targets').append($('<div/>').addClass('target'))
+    $('#targets').append($('<div>').addClass('target'))
 
   #move these targets into position, one over each square
   for target, i in $('.target')
@@ -134,6 +134,43 @@ setupEnemyBoard = ->
     targetPixPos = getPixelPosition(x, y)
     placeItem($(target), targetPixPos.left, targetPixPos.top)
 
+
+window.enemyAttack = (index, hit, ship, sunk) ->
+  if result == 'hit'
+    if sunk
+      $('my_messages').html("P45 sunk your " + ship " !!!")
+    else
+      $('my_messages').html("P45 hit your " + ship " !!!")
+    
+    $('#ships').append($('<div>').addClass('just_hit'))
+    $hit = $('.just_hit')
+    hitPix = getPixelPosition(indexToCoords(index).x, indexToCoords(index).y)
+    placeItem($hit, hitPix.left, hitPix.top)
+    $hit.removeClass('just_hit').addClass('hit')
+
+
+  else if result == 'already_hit'
+    $('my_messages').html("P45 fired on coordinates that were already hit<br>" +
+      "Their bot isn't very smart, is it?")
+  else
+    $('my_messages').html("P45 missed...")
+
+
+window.updateMyStats = (hits, misses, sunk_ships) ->
+  $('enemy_messages').empty()
+  $('my_stats .hits').html("# Hits: " + hits)
+  $('my_stats .misses').html("# Misses: " + misses)
+  $('my_stats .sunk').html("Sunk: ")
+  for ship in sunk_ships
+    $('my_stats sunk').append("<br>ship")
+
+window.updateEnemyStats = () ->
+  $('enemy_messages').html("Your turn!  Click on an enemy square to fire.")
+
+window.yourTurn = () ->
+  
+
+window.gameOver = () ->
 
 #Board coordinate system is... X [0..9], Y [0..9]
                             #from the upper-left corner 0,0 to lower right 9,9
@@ -150,6 +187,11 @@ getCoords = (left, top) ->    #opposite of getPixelPosition - this takes in px, 
 placeItem = ($item, leftLoc, topLoc) ->
   $item.css('left', leftLoc)
   $item.css('top', topLoc)
+
+indexToCoords = (index) ->
+  result = 
+    'x':  index % 10 
+    'y':  index / 10
 
 placeShip = ($ship, index) ->
   #figure out the x&y coordinates we're placing at the moment

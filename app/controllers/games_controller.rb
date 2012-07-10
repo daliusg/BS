@@ -54,7 +54,8 @@ class GamesController < ApplicationController
       game = player.games.create()
       session[:game_id] = game.id
       # Have model set up 100 squares for this game
-      game.setupSquares 
+      game.setupSquares
+      game.createShips
     else
       game = Game.find(session[:game_id])
     end  
@@ -63,9 +64,6 @@ class GamesController < ApplicationController
     ships = Ship.find(:all, :select => "name, length", :order => "id")
     ships = ships.map { |s| [s.name, s.length] }  #An array of all ships
     @ship = ships[session[:ship_setup_id]]    #[name,length] of current ship
-    @shipID = session[:ship_setup_id]
-    @gameID = session[:game_id]
-    @state = session[:ship_setup_state]
 
     # The first time through for each ship, set shipFlag to "bow" to 
     # trigger the javascript to execute bow placement prompt 
@@ -182,14 +180,14 @@ class GamesController < ApplicationController
     # Battleship Bot is supposed to return id, x, & y coordinates of first fire
     result = register(current_player)
 
-    code = result.code
+    code = result.code.to_i
     message = result.message
     r_body = result.body
     r_JSON = JSON.parse(r_body)
     
-    p45_id = r_JSON["id"]
-    xCoord = r_JSON["x"]
-    yCoord = r_JSON["y"]
+    p45_id = r_JSON["id"].to_i
+    xCoord = r_JSON["x"].to_i
+    yCoord = r_JSON["y"].to_i
 
     logger.info("============Results sent back from P45 ============")
     logger.info("code: #{code}")
@@ -199,31 +197,51 @@ class GamesController < ApplicationController
     logger.info("y: #{yCoord}")
     logger.info("===================================================")
     
+    ###########################################################################
+    ### P45 Server not working - generate first shot for it                ####
+    xCoord = rand(10)                                                      ####
+    yCoord = rand(10)                                                      ####
+    ####                                                                   ####
+    ###########################################################################
+    
     # Check for proper response & correct information sent back
     # and save p45 Bot's game id 
+    logger.info("============Before starting game ============")
+    logger.info("my Random X: #{xCoord}")
+    logger.info("my Random Y: #{yCoord}")
+    logger.info("===================================================")
+
     if code == 200 && p45_id && xCoord && yCoord
       game = Game.find(session[:game_id])
       game.botID = p45_id
       game.save
-      
-      # Registration successful, game starts, process p45 shot and proceed
-      index = getIndex(xCoord, yCoord)
-      ###################   TODO:   ###########################################
-      # game.firedUpon(index)
+      game.start
+      @index = getIndex(xCoord, yCoord)
+      logger.info("============Should be playing, just before underFire ============")
+      @hit, @ship, @sunk, @lost = underFire(game, @index) ## Method to process enemy fire
+      logger.info("============underFire Return Vals============")
+      logger.info("hit: #{@hit}")
+      logger.info("ship: #{@ship}")
+      logger.info("sunk: #{@sunk}")
+      logger.info("lost: #{@lost}")
+      logger.info("===================================================")
+      @my_hits = game.my_hits
+      @my_misses = game.my_misses
+      @sunk_ships = game.mySunkShips
+      @finished = game.finished
+
 
       respond_to do |format|
         format.js { } # start.js.erb 
       end
-    
-    # Registration failure
-    else
+
+    else  # Registration failure
       respond_to do |format|
         format.js { render 'reg_fail'} 
       end    
     end
 
   end
-
   
   # POST /attack
   # This method is seriously messed up, needs to be updated with new flow/logic
@@ -263,4 +281,23 @@ class GamesController < ApplicationController
       end
     end
 
+    # return hit, shipName, sunk, lost
+    def underFire (game, index)
+      hit, ship = game.firedUpon(index)
+      #default values
+      sunk, lost = false  
+      shipName = nil
+
+      if hit == 'hit' 
+        shipName = ship.name
+        sunk = game.my_ships.find_by_ship_id(ship).sunk
+        lost = game.finished
+      elsif hit == 'already_hit'
+         shipName = ship.name
+      end
+
+      game.toggle_turn if !lost
+
+      return hit, shipName, sunk, lost
+    end
 end
