@@ -4,6 +4,10 @@ class ApplicationController < ActionController::Base
 
   private
 
+  def current_game
+    Game.find(session[:game_id])
+  end
+
   def current_player
     Player.find(session[:player_id])
   end
@@ -15,7 +19,7 @@ class ApplicationController < ActionController::Base
   def getCoords (index)
     x = index%10
     y = index/10
-    return [x,y]
+    return x,y
   end
   # protected
 

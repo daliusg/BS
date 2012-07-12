@@ -49,16 +49,6 @@ $(document).ready ->
       type: 'POST'
       data: { x: coords.x, y: coords.y }
       dataType: "script" 
-      # No need for callbacks at this point - DOM mods will come from js sent down
-      #error: (jqXHR, textStatus, errorThrown) ->
-       # $('#enemy_messages').html "AJAX Error: #{textStatus}" #.hide.fadeIn(500)   for effect???
-      #success: (data, textStatus, jqXHR) ->
-       # $('#enemy_messages').html "Successful AJAX Call: #{data}"
-
-    #I think I'm going to have to set the 'target' as 'hit' or 'miss' in this script, based
-    #on what the app returns, because I cannot figure out how to send the 
-    #actual html element which could be updated in rails
-
 
 #########################         Methods       ###############################
 
@@ -136,36 +126,55 @@ setupEnemyBoard = ->
 
 
 window.enemyAttack = (index, hit, ship, sunk) ->
-  if result == 'hit'
+  if hit == "hit"
     if sunk
-      $('my_messages').html("P45 sunk your " + ship " !!!")
+      $('#my_messages').html("P45 sunk your " + ship + " !!!")
     else
-      $('my_messages').html("P45 hit your " + ship " !!!")
+      $('#my_messages').html("P45 hit your " + ship + " !!!")
     
     $('#ships').append($('<div>').addClass('just_hit'))
     $hit = $('.just_hit')
     hitPix = getPixelPosition(indexToCoords(index).x, indexToCoords(index).y)
     placeItem($hit, hitPix.left, hitPix.top)
+    $hit.hide()
     $hit.removeClass('just_hit').addClass('hit')
+    $hit.fadeIn(1000)
 
-
-  else if result == 'already_hit'
-    $('my_messages').html("P45 fired on coordinates that were already hit<br>" +
+  else if hit == "already_hit"
+    $('#my_messages').html("P45 fired on coordinates that were already hit<br>"+
       "Their bot isn't very smart, is it?")
-  else
-    $('my_messages').html("P45 missed...")
+  else # hit == "miss"
+    $('#my_messages').html("P45 missed...")
 
 
 window.updateMyStats = (hits, misses, sunk_ships) ->
-  $('enemy_messages').empty()
-  $('my_stats .hits').html("# Hits: " + hits)
-  $('my_stats .misses').html("# Misses: " + misses)
-  $('my_stats .sunk').html("Sunk: ")
-  for ship in sunk_ships
-    $('my_stats sunk').append("<br>ship")
+  $('#my_stats h4').html("YOU<hr>")
+  $('#my_stats .hits').html("<span class='key'>Hits: </span>" + 
+                            "<span class='value'>"+ hits+ "</span>")
+  $('#my_stats .misses').html("<span class='key'>Misses: </span>" +
+                              "<span class='value'>" + misses+ "</span>")
+  $('#my_stats .sunk').html("<span class='key'>Sunk: </span>")
+  if sunk_ships != null
+    for ship in sunk_ships
+      $('#my_stats .sunk').append("<br><span class='value'>" + ship + "</span>")
+  
+  setTimeout (-> $('#my_messages').empty()), 3000
+  setTimeout (->
+    $('#enemy_messages').html("Your turn!  Click on an enemy square to fire.")
+    ), 3000
 
-window.updateEnemyStats = () ->
-  $('enemy_messages').html("Your turn!  Click on an enemy square to fire.")
+window.updateEnemyStats = (hits, misses, sunk_ships) ->
+  $('#enemy_stats h4').html("PLATFORM 45<hr>")
+  $('#enemy_stats .hits').html("<span class='key'>Hits: </span>" + 
+                            "<span class='value'>"+ hits+ "</span>")
+  $('#enemy_stats .misses').html("<span class='key'>Misses: </span>" +
+                              "<span class='value'>" + misses+ "</span>")
+  $('#enemy_stats .sunk').html("<span class='key'>Sunk: </span>")
+  if sunk_ships != null  
+    for ship in sunk_ships
+      $('#enemy_stats .sunk').append("<br><span class='value'>" + ship + "</span>")
+  #setTimeout (-> $('#my_messages').html("P45's turn..."), 3000
+
 
 window.yourTurn = () ->
   
@@ -191,7 +200,7 @@ placeItem = ($item, leftLoc, topLoc) ->
 indexToCoords = (index) ->
   result = 
     'x':  index % 10 
-    'y':  index / 10
+    'y':  Math.floor(index / 10)
 
 placeShip = ($ship, index) ->
   #figure out the x&y coordinates we're placing at the moment

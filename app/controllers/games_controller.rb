@@ -14,9 +14,15 @@ class GamesController < ApplicationController
   
   # POST/setup
   def setup
-    # Change which ship is being set up with each visit to 'setup'
-    # :ship_setup_id identifies which ship we're working with a the moment
-    # :ship_setup_state identifies which activity we'll be performing =>
+    # This method is called many times during the ship setup process.  It 
+    # determines what prompts to display to the user, and validates each 
+    # placement the user tries to make. Only if a ship's placement is valid
+    # is it commited to the db. Once all ships are successfully placed, this
+    # this method is finished and will then render "setup_last" to prompt
+    # the user to start the game.
+    #################       Some session vars used  ###########################
+    # :ship_setup_id - identifies which ship we're working with a the moment
+    # :ship_setup_state - identifies which activity we'll be performing =>
     #     start: first time through for this ship, prompt user to place bow
     #     bow: user has clicked to place bow, validate and either reprompt or
     #          and proceed to prompt for the direction
@@ -24,6 +30,9 @@ class GamesController < ApplicationController
     #              validate and either reprompt or proceed with placing ship 
     #              (update model and call javascript to mark board accordingly)
     #     placed: use this as a marker to denote that the ship has been placed
+    # :game_id - our game id in the db
+    # :ship_coords - stores ship's coordinates before they are validated and
+    #                written to db
     
     # Capture param being sent from client
     if !params[:task]
@@ -57,13 +66,13 @@ class GamesController < ApplicationController
       game.setupSquares
       game.createShips
     else
-      game = Game.find(session[:game_id])
+      game = current_game
     end  
 
     # Obtain the name & length of the ship we are setting up
     ships = Ship.find(:all, :select => "name, length", :order => "id")
     ships = ships.map { |s| [s.name, s.length] }  #An array of all ships
-    @ship = ships[session[:ship_setup_id]]    #[name,length] of current ship
+    @ship = ships[session[:ship_setup_id]]   #[name,length] of current ship
 
     # The first time through for each ship, set shipFlag to "bow" to 
     # trigger the javascript to execute bow placement prompt 
@@ -73,7 +82,7 @@ class GamesController < ApplicationController
 
     # The user clicked to place bow - must validate the selection, if not
     # valid, must reprompt to place bow
-    # If valid, then store this data (model?, session?) and prompt for direction
+    # If valid, then store this data in :ship_coords and prompt for direction
     elsif session[:ship_setup_state] == 'bow'
       # Validate if this is OK location by checking if currently occupied
       x = params[:x].to_i
@@ -87,8 +96,10 @@ class GamesController < ApplicationController
         @redo = false
         #store x,y coords of bow
         session[:ship_coords] = [getIndex(x,y)]
-        # settingetCoords(session[:ship_coords][0])will cause JS to prompt for ship direction
-        if @ship[1] == 1  #special case of ship being 1 unit long -> place it!
+        # set flags to prompt client script to either place 1 unit ship or
+        # prompt for direction
+        if @ship[1] == 1  #if length is 1, go ahead and place the ship!
+          game.placeShip(session[:ship_setup_id]+1, session[:ship_coords])
           @shipFlag = 'place'
         else  
           @shipFlag = 'direction'
@@ -97,53 +108,24 @@ class GamesController < ApplicationController
 
     # The user clicked to determine direction - must validate the selection, 
     # if not valid, must reprompt for direction
-    # If valid, then "place" ship in the model, and ask JS to place on screen
+    # If valid, then "place" ship in the model, and ask client JS to display
     elsif session[:ship_setup_state] == 'direction'
       # Validate if this is OK location by checking if currently occupied
       x = params[:x].to_i
       y = params[:y].to_i
-      bowX = getCoords(session[:ship_coords][0])[0]
-      bowY = getCoords(session[:ship_coords][0])[1]
+      coords = session[:ship_coords] #currently just [bowIndex]
       length = @ship[1]
-      valid = true
 
-      for index in (1...length)
-        if valid == true 
-          # First get X,Y coordinates of next placement
-          if bowX == x         # ship lies N or S
-            if bowY < y        # ship lies S
-              y = bowY + index
-            else # bowY > y    # ship lies N
-              y = bowY - index
-            end
-          elsif bowY == y      # ship lies E or W
-            if bowX < x        # ship lies E
-              x = bowX + index
-            else # bowX > x    # ship lies W
-              x = bowX - index
-            end
-          else #direction picked not in N,E,S,W directions, redo!
-            valid = false
-          end
+      # valid = true
+      direction = getDirection(coords, x, y) # Determines N,S,E,W
+      logger.debug("direction returned: #{direction}")
+      if direction <= 3
+        valid = game.placementClear(length, direction, coords, "myBoard")
+      else  #user's click not in cardinal direction
+        valid = false
+      end         
 
-          # Out-of-bounds check
-          if x < 0 || x > 9 || y < 0 || y > 9 
-            valid = false
-          end
-
-          if valid
-            # append these [x,y] coordinates to :ship_coords sessions variable
-            session[:ship_coords] << getIndex(x,y)
-            square = game.squares.find_by_index(getIndex(x,y))
-            # If there's already a ship there, invalidate this placement
-            if square.ship_id
-              valid = false
-            end
-          end
-        end
-      end    
-
-      # If arrive here and 'valid' false, restart from placing bow
+      # If valid == false, restart from placing bow
       if !valid
         session[:ship_coords] = nil
         @redo = true
@@ -152,18 +134,13 @@ class GamesController < ApplicationController
       # if valid=true, OK to place ship
       else
         # Have the model record the position of the ship
-        game.placeShip(session[:ship_setup_id]+1, session[:ship_coords])
+        game.placeShip(session[:ship_setup_id]+1, coords)
         # setting state to 'place' will cause JS to mark ship on board
         @redo = false
         @shipFlag = 'place'
       end  
 
-    # Once all else has been done, last step is to register game with P45 Bot
-    # and start nuking away!  
-    else # session[:ship_setup_state] == 'all_placed'
-      # result = register(current_player)
-      # logger.info("")
-      
+    else # session[:ship_setup_state] == 'all_placed' 
       respond_to do |format|
         format.js { render 'setup_last' } # prompt for the games to begin
       end
@@ -178,6 +155,7 @@ class GamesController < ApplicationController
   def start
     # register current player with P45 Bot
     # Battleship Bot is supposed to return id, x, & y coordinates of first fire
+    
     result = register(current_player)
 
     code = result.code.to_i
@@ -186,8 +164,8 @@ class GamesController < ApplicationController
     r_JSON = JSON.parse(r_body)
     
     p45_id = r_JSON["id"].to_i
-    xCoord = r_JSON["x"].to_i
-    yCoord = r_JSON["y"].to_i
+    xCoord = r_JSON["x"].to_i #careful: this will turn nil into a 0!
+    yCoord = r_JSON["y"].to_i # !!
 
     logger.info("============Results sent back from P45 ============")
     logger.info("code: #{code}")
@@ -199,37 +177,31 @@ class GamesController < ApplicationController
     
     ###########################################################################
     ### P45 Server not working - generate first shot for it                ####
-    xCoord = rand(10)                                                      ####
-    yCoord = rand(10)                                                      ####
+    xCoord = rand(10)                                                     ####
+    yCoord = rand(10)                                                     ####
     ####                                                                   ####
     ###########################################################################
     
     # Check for proper response & correct information sent back
     # and save p45 Bot's game id 
-    logger.info("============Before starting game ============")
-    logger.info("my Random X: #{xCoord}")
-    logger.info("my Random Y: #{yCoord}")
-    logger.info("===================================================")
 
     if code == 200 && p45_id && xCoord && yCoord
       game = Game.find(session[:game_id])
       game.botID = p45_id
+      game.setupEnemyBoard   ### THIS WILL SET UP RANDOM ENEMY BOARD
       game.save
       game.start
       @index = getIndex(xCoord, yCoord)
-      logger.info("============Should be playing, just before underFire ============")
       @hit, @ship, @sunk, @lost = underFire(game, @index) ## Method to process enemy fire
-      logger.info("============underFire Return Vals============")
-      logger.info("hit: #{@hit}")
-      logger.info("ship: #{@ship}")
-      logger.info("sunk: #{@sunk}")
-      logger.info("lost: #{@lost}")
-      logger.info("===================================================")
+
+      #These vals are passed to updateMyStats in start.js.erb 
       @my_hits = game.my_hits
       @my_misses = game.my_misses
-      @sunk_ships = game.mySunkShips
+      @my_sunk_ships = game.mySunkShips
+      @enemy_hits = game.enemy_hits
+      @enemy_misses = game.enemy_misses
+      @enemy_sunk_ships = game.enemySunkShips
       @finished = game.finished
-
 
       respond_to do |format|
         format.js { } # start.js.erb 
@@ -244,23 +216,52 @@ class GamesController < ApplicationController
   end
   
   # POST /attack
-  # This method is seriously messed up, needs to be updated with new flow/logic
+  # This method processes a user initiated attack on P45
   def attack
     # There is a unique case when the game has not started yet and the user
     # starts firing missiles by clicking on the enemy board. If this happens
     # ignore the AJAX requests coming in, redirect to index
-    if !session[:ok_to_fire]
+    game = current_game
+    if !game.my_turn
       respond_to do |format|
-        format.js { } #attack.js.erb
+        format.js { 
+          render js: 
+            "$('#enemy_messages').html(\"<p>Tsk, tsk, tsk...  Wait your turn!</p>\");"}
       end
     end  
     # X & Y coordinates are sent from the client 
     # they need to be passed on to Battleship Bot server as a NUKE request
-    @xCoord = params[:x]
-    @yCoord = params[:y]
+    x = params[:x]
+    y = params[:y]
 
-    #Nuke request to Battleship Bot
+    if P45_WORKING   ##############   ONLY DO THIS IF SERVER WORKING ##########
+      result = fire(game.botID, x, y)
+      
+      code = result.code.to_i
+      message = result.message
+      r_body = result.body
+      r_JSON = JSON.parse(r_body)
 
+      ##   THESE ARE THE POSSIBLE RESPONSES FROM P45  ##
+      status = r_JSON["status"]  # hit or miss
+      sunk = r_JSON["sunk"] # name of craft which was sunk
+      game_status = r_JSON["game_status"] #'lost' when game is lost
+      error = r_JSON["error"] # Error message if something went wrong
+      prize = r_JSON["prize"]# Will contain prize when sunk all enemy ships
+    
+    ################     PLAY MY OWN SIMULATED ENEMY    ***TODO***  ###########
+    else
+      result = game.fireOnEnemy(x, y)   ## Have my method return a JSON response
+                                        ## similar to one expected from P45 to make
+                                        ## things easier if P45 ever starts working
+      r_JSON = JSON.parse(result)                                  
+      # status = r_JSON["status"]  # hit or miss
+      # sunk = r_JSON["sunk"] # name of craft which was sunk
+      # game_status = r_JSON["game_status"] #'lost' when game is lost
+      # error = r_JSON["error"] # Error message if something went wrong
+      # prize = r_JSON["prize"]# Will contain prize when sunk all enemy ships
+    end
+    
     respond_to do |format|
       format.js { }
       # format.json { hurl artilery at P45 server }
@@ -275,6 +276,17 @@ class GamesController < ApplicationController
       request = Net::HTTP::Post.new(uri.path)
       request.content_type = 'application/json'
       body = { name: player.name, email: player.email}
+      request.body = JSON(body)
+      response = Net::HTTP.start(uri.hostname, uri.port) do |http|
+        http.request(request)
+      end
+    end
+
+    def fire (P45ID, x, y)
+      uri = URI('http://battle.platform45.com/nuke')
+      request = Net::HTTP::Post.new(uri.path)
+      request.content_type = 'application/json'
+      body = { id: P45ID, x: x, y: y}
       request.body = JSON(body)
       response = Net::HTTP.start(uri.hostname, uri.port) do |http|
         http.request(request)
@@ -300,4 +312,28 @@ class GamesController < ApplicationController
 
       return hit, shipName, sunk, lost
     end
+
+    def getDirection (coords, x, y)
+      bowX = getCoords(coords[0])[0]
+      bowY = getCoords(coords[0])[1]
+      logger.debug("coords in getDirection: #{coords}")
+      logger.debug("bowX: #{bowX}")
+      logger.debug("bowY: #{bowY}")
+      if bowX == x         # ship lies N or S
+        if bowY > y        # ship lies N
+          direction =  0
+        else               # ship lies S
+          direction =  1
+        end
+      elsif bowY == y      # ship lies E or W
+        if bowX < x        # ship lies E
+          direction =  2
+        else               # ship lies W
+          direction =  3
+        end
+      end
+      logger.debug("direction, just before return: #{direction}")
+      return direction
+    end
+
 end

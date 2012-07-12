@@ -48,6 +48,9 @@ $board-color: #1CE;
     background-color:#777;
   }
   .hit{
+    position: absolute;
+    width:39px;
+    height:39px;
     background-color: #f33; 
   }
 }

@@ -21,7 +21,7 @@ body {
 }
 
 p, ol, ul, td {
-  font-family: verdana, arial, helvetica, sans-serif;
+  font-family: verdana, helvetica, sans-serif;
   font-size: 13px;
   line-height: 18px; }
 
@@ -74,6 +74,29 @@ a {
     background-color: #444;
     border-radius: 8px;
     -webkit-box-shadow: -1px 1px 2px 3px #555;
+  }
+  #my_stats, #enemy_stats{
+    
+    font-family: "Lucinda Console", Monaco, Monospace;
+    
+    h4 {
+      font-size: 140%;
+      color: #0F1;
+    }
+
+    .hits, .misses, .sunk{
+      margin-left: 10px;
+      margin-top: 15px;
+
+      .key{
+        font-size: 130%;
+        color: #0F1;
+      }
+      .value{
+        font-size: 100%;
+        color: #0FF;    
+      }
+    }
   }
 }
 

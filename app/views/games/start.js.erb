@@ -2,21 +2,18 @@
                   and prompts the user to fire back, thus beginning the
                   back and forth volley of the game %>
 
-$('#my_stats').empty();
 $('#my_messages').empty();
 
-window.enemyAttack(<%= @index %>, <%=j @hit %>, <%=j @ship %>, <%= @sunk %>);
+var ship = <%= @ship == nil ?  nil.to_json : "'#{@ship}'" %>;
+window.enemyAttack(<%= @index %>, "<%=j @hit %>", ship, <%= @sunk %>);
 
-var sunk_ships = 
-  <% if @sunk_ships != nil %>
-    <%="['#{@sunk_ships.join('\',\'')}']" %>
-  <% else %>
-    <%= nil %>
-  <% end %>;
+var my_sunk_ships = <%= @my_sunk_ships == nil ? nil.to_json : "['#{@my_sunk_ships.join('\',\'')}']"  %>;
+window.updateMyStats(<%= @my_hits %>, <%= @my_misses %>, my_sunk_ships);
 
-window.updateMyStats(<%= @my_hits %>, <%= @my_misses %>, sunk_ships);
+var enemy_sunk_ships = <%= @enemy_sunk_ships == nil ? nil.to_json : "['#{@enemy_sunk_ships.join('\',\'')}']"%>;
+window.updateEnemyStats(<%=@enemy_hits%>,<%=@enemy_misses%>,enemy_sunk_ships);
 
-window.yourTurn();
+// window.yourTurn();
 
 // realistically, this is not happening on the first fire!
 // if <@#= finished %> {

@@ -11,15 +11,24 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120710145121) do
+ActiveRecord::Schema.define(:version => 20120712123606) do
 
   create_table "enemy_ships", :force => true do |t|
     t.integer  "game_id"
     t.integer  "ship_id"
     t.integer  "hits",       :default => 0
-    t.integer  "sunk",       :default => 0
-    t.datetime "created_at",                :null => false
-    t.datetime "updated_at",                :null => false
+    t.boolean  "sunk",       :default => false
+    t.datetime "created_at",                    :null => false
+    t.datetime "updated_at",                    :null => false
+  end
+
+  create_table "enemy_squares", :force => true do |t|
+    t.integer  "index"
+    t.integer  "ship_id"
+    t.integer  "game_id"
+    t.boolean  "hit"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
   end
 
   create_table "games", :force => true do |t|
@@ -40,9 +49,9 @@ ActiveRecord::Schema.define(:version => 20120710145121) do
     t.integer  "game_id"
     t.integer  "ship_id"
     t.integer  "hits",       :default => 0
-    t.integer  "sunk",       :default => 0
-    t.datetime "created_at",                :null => false
-    t.datetime "updated_at",                :null => false
+    t.boolean  "sunk",       :default => false
+    t.datetime "created_at",                    :null => false
+    t.datetime "updated_at",                    :null => false
   end
 
   create_table "players", :force => true do |t|
