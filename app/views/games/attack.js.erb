@@ -1,3 +1,16 @@
 <%# This file will display the results of the attack on P45 %>
   
-  $('#enemy_messages').html("<p>This should not run</p>");
+$('#enemy_messages').empty();
+
+<%# Pass entire json result to js %>
+window.attack(<%= @index %>, "<%=j raw @result %>");
+<%# Pass json of enemy stats %>
+window.updateEnemyStats("<%=j raw @stats %>");
+
+<% if @lost %>
+  window.gameOver("you")
+<% else %>
+  window.enemyTurn();
+<% end %>
+
+

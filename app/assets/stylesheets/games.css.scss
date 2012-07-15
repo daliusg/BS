@@ -28,7 +28,7 @@ $board-color: #1CE;
     border-bottom-style:solid;
 
     background: darken($board-color, 25%);
-    
+    // background: #189;
         
     border-right-style:solid;
     border-bottom-style:solid;
@@ -53,6 +53,12 @@ $board-color: #1CE;
     height:39px;
     background-color: #f33; 
   }
+  .ship_miss{
+    position: absolute;
+    width:39px;
+    height:39px;
+
+  }
 }
 
 #targets{
@@ -67,9 +73,15 @@ $board-color: #1CE;
     height:39px;
   }
   .hit{
+    position: absolute;
+    width:39px;
+    height:39px;
     background-color: #f33;
   }
   .miss{
+    position: absolute;
+    width:39px;
+    height:39px;
     background-color: #fff;
   }
 }

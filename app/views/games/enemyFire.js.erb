@@ -1,0 +1,12 @@
+<%#= Javascript to be run after enemy fire processed %>
+
+<%# Pass entire json result to js %>
+window.underAttack(<%= @index %>, "<%=j raw @result %>");
+<%# Pass json of enemy stats %>
+window.updateMyStats("<%=j raw @stats %>");
+
+<% if @lost %>
+  window.gameOver("enemy")
+<% else %>
+  window.yourTurn();
+<% end %>

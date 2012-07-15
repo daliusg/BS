@@ -1,6 +1,7 @@
 $(document).ready ->
   
-    # Some global vars
+  # Some global vars
+  window.myTurn = false
   window.squareCount = 10*10
   window.width = 39
   window.border = 1
@@ -40,17 +41,20 @@ $(document).ready ->
   # If user clicks on an enemy target, send a message to the application
   # to send a nuke request to the BShiP45 server to blow that shit up
   $('.target').click ->
-    $target = $(this)
-    
-    position = $target.position()
-    coords = getCoords(position.left, position.top)
+    if window.myTurn == true  #only process clicks if your turn to fire!
+      $target = $(this)
+      
+      position = $target.position()
+      coords = getCoords(position.left, position.top)
 
-    $.ajax '/attack',
-      type: 'POST'
-      data: { x: coords.x, y: coords.y }
-      dataType: "script" 
+      $.ajax '/attack',
+        type: 'POST'
+        data: { x: coords.x, y: coords.y }
+        dataType: "script" 
 
-#########################         Methods       ###############################
+###############################################################################
+#########################    SETUP     METHODS       ##########################
+###############################################################################
 
 # Takes a ship array [name, length] as well as aflags, which indicates whether
 # 1) bow is being placed 2) direction is being set or 3) ship is being set down
@@ -80,16 +84,9 @@ window.setupMyShips = (ship, shipFlag, redo) ->
                              "( " + length + " long)</p>")
 
   else if shipFlag == "direction"
-    #if redo
-    #  $('#my_messages > p').empty().html("Sorry, but that would either place " +
-    #    "the " + name + " on top of another ship or on a diagonal!  Please " +
-    #    "click a square which is in the direction you would like the ship's " +
-    #    "stern to lie.")
-    #else
     $('#my_messages > p').empty().html("Please click a square which is in " +
                             "the direction you would like the ship's stern " +
                             "to lie.")
-  
   # Or place the ship
   else  # shipFlag == 'place', meaning 'ship' needs to be created and placed
     # Create a bunch of ship-squares
@@ -112,7 +109,7 @@ window.setupMyShips = (ship, shipFlag, redo) ->
 
 
 # Place a 'target' on each square of enemy board
-# This 'target' will be used to mark hits/misses
+# This 'target' will be used to mark coordinates that you've picked to fire on
 setupEnemyBoard = ->
   for i in [0...window.squareCount]
     $('#targets').append($('<div>').addClass('target'))
@@ -124,13 +121,17 @@ setupEnemyBoard = ->
     targetPixPos = getPixelPosition(x, y)
     placeItem($(target), targetPixPos.left, targetPixPos.top)
 
+###############################################################################
+#########################    GAME LOGIC METHODS       #########################
+###############################################################################
+window.underAttack = (index, response) ->
+  result = JSON.parse(response)
 
-window.enemyAttack = (index, hit, ship, sunk) ->
-  if hit == "hit"
-    if sunk
-      $('#my_messages').html("P45 sunk your " + ship + " !!!")
+  if result.status == "hit"
+    if result.sunk
+      $('#my_messages').html("P45 sunk your " + result.sunk + " !!!")
     else
-      $('#my_messages').html("P45 hit your " + ship + " !!!")
+      $('#my_messages').html("P45 hit a ship!!!")
     
     $('#ships').append($('<div>').addClass('just_hit'))
     $hit = $('.just_hit')
@@ -140,55 +141,123 @@ window.enemyAttack = (index, hit, ship, sunk) ->
     $hit.removeClass('just_hit').addClass('hit')
     $hit.fadeIn(1000)
 
-  else if hit == "already_hit"
+  else if result.status == "already_hit"
     $('#my_messages').html("P45 fired on coordinates that were already hit<br>"+
       "Their bot isn't very smart, is it?")
   else # hit == "miss"
     $('#my_messages').html("P45 missed...")
 
+    $('#ships').append($('<div>').addClass('just_missed'))
+    $miss = $('.just_missed')
+    missPix = getPixelPosition(indexToCoords(index).x, 
+                              indexToCoords(index).y)
+    placeItem($miss, missPix.left, missPix.top)
+    $miss.removeClass('just_missed').addClass('ship_miss')
+    $miss.css {'background-color':'#fff'}
+    setTimeout (-> 
+      $miss.animate {'background-color':'#086677'},3000
+      ), 3000
 
-window.updateMyStats = (hits, misses, sunk_ships) ->
+window.attack = (index, response) ->
+  result = JSON.parse(response)
+
+  if result.status == "hit"
+    if result.sunk
+      $('#enemy_messages').html("You sunk their " + result.sunk + " !!!")
+    else
+      $('#enemy_messages').html("You hit a ship!!!")
+    
+    $('#targets').append($('<div>').addClass('just_hit'))
+    $hit = $('.just_hit')
+    hitPix = getPixelPosition(indexToCoords(index).x, 
+                              indexToCoords(index).y)
+    placeItem($hit, hitPix.left, hitPix.top)
+    $hit.hide()
+    $hit.removeClass('just_hit').addClass('hit')
+    $hit.fadeIn(1000)
+
+  else if result.status == "already_hit"
+    $('#enemy_messages').html("Why would you fire on something already hit?<br>"+
+      "Get it together man!")
+  else # result.status == "miss"
+    $('#enemy_messages').html("You missed...")
+
+    $('#targets').append($('<div>').addClass('just_missed'))
+    $miss = $('.just_missed')
+    missPix = getPixelPosition(indexToCoords(index).x, 
+                              indexToCoords(index).y)
+    placeItem($miss, missPix.left, missPix.top)
+    $miss.hide()
+    $miss.removeClass('just_missed').addClass('miss')
+    $miss.fadeIn(1000)
+
+
+window.updateMyStats = (results) ->
+  stats = JSON.parse(results)
   $('#my_stats h4').html("YOU<hr>")
   $('#my_stats .hits').html("<span class='key'>Hits: </span>" + 
-                            "<span class='value'>"+ hits+ "</span>")
+                            "<span class='value'>"+ stats.my_hits+ "</span>")
   $('#my_stats .misses').html("<span class='key'>Misses: </span>" +
-                              "<span class='value'>" + misses+ "</span>")
+                              "<span class='value'>" + stats.my_misses+ "</span>")
   $('#my_stats .sunk').html("<span class='key'>Sunk: </span>")
-  if sunk_ships != null
-    for ship in sunk_ships
+  if stats.my_sunk_ships != null
+    for ship in stats.my_sunk_ships
       $('#my_stats .sunk').append("<br><span class='value'>" + ship + "</span>")
   
-  setTimeout (-> $('#my_messages').empty()), 3000
-  setTimeout (->
-    $('#enemy_messages').html("Your turn!  Click on an enemy square to fire.")
-    ), 3000
-
-window.updateEnemyStats = (hits, misses, sunk_ships) ->
+  
+window.updateEnemyStats = (results) ->
+  stats = JSON.parse(results)
   $('#enemy_stats h4').html("PLATFORM 45<hr>")
   $('#enemy_stats .hits').html("<span class='key'>Hits: </span>" + 
-                            "<span class='value'>"+ hits+ "</span>")
+                            "<span class='value'>"+ stats.enemy_hits+ "</span>")
   $('#enemy_stats .misses').html("<span class='key'>Misses: </span>" +
-                              "<span class='value'>" + misses+ "</span>")
+                              "<span class='value'>" + stats.enemy_misses+ "</span>")
   $('#enemy_stats .sunk').html("<span class='key'>Sunk: </span>")
-  if sunk_ships != null  
-    for ship in sunk_ships
+  if stats.enemy_sunk_ships != null  
+    for ship in stats.enemy_sunk_ships
       $('#enemy_stats .sunk').append("<br><span class='value'>" + ship + "</span>")
-  #setTimeout (-> $('#my_messages').html("P45's turn..."), 3000
-
 
 window.yourTurn = () ->
-  
+  window.myTurn = true
+  setTimeout (-> $('#my_messages').empty()), 2000
+  setTimeout (-> $('#enemy_messages').html("Your turn!  Click on an enemy square to fire.")), 1000
 
-window.gameOver = () ->
+window.enemyTurn = () ->
+  window.myTurn = false
+  setTimeout (-> $('#enemy_messages').empty()), 1000
+  $('#my_messages').html("P45's turn...")
+  # AJAX post to app to trigger enemy fire
+  setTimeout (->
+    $.ajax '/enemyFire', 
+      type: 'GET'
+      dataType: "script"  
+    ), 1000
+  
+window.gameOver = (winner) ->
+  window.myTurn = false
+  document.cookie = "_battleship_session=;expires=" + new Date(0).toGMTString
+  if winner == "you"
+    setTimeout (-> $('#enemy_messages').empty()), 3000
+    setTimeout (-> $('#enemy_messages').html("Congratulations!  You WON!!!!")), 3000
+  else #winner == "enemy"
+    setTimeout (-> $('#my_messages').empty()), 3000
+    setTimeout (-> $('#my_messages').html("P45 sunk your entire fleet.<br>Sorry, you lost.")), 3000
+
+##############################################################################
+#######################    ACCESSORIES / HELPERS       #######################
+##############################################################################
 
 #Board coordinate system is... X [0..9], Y [0..9]
-                            #from the upper-left corner 0,0 to lower right 9,9
-getPixelPosition = (x,y) ->     #Take an x,y position and return pixel counts from upperleft    
+#from the upper-left corner 0,0 to lower right 9,9
+
+#Take an x,y position and return pixel counts from upperleft    
+getPixelPosition = (x,y) ->     
   result =
     'left': (x * (window.width+window.border))+'px'
     'top':  (y * (window.width+window.border))+'px'
 
-getCoords = (left, top) ->    #opposite of getPixelPosition - this takes in px, returns coords
+#opposite of getPixelPosition - this takes in px, returns coords
+getCoords = (left, top) ->    
   result =  
     'x': left / (window.width + window.border)
     'y': top / (window.width + window.border)

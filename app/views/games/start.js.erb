@@ -3,22 +3,11 @@
                   back and forth volley of the game %>
 
 $('#my_messages').empty();
+<%# Display results of first firing %>
+window.underAttack(<%= @index %>, "<%=j raw @result %>")
 
-var ship = <%= @ship == nil ?  nil.to_json : "'#{@ship}'" %>;
-window.enemyAttack(<%= @index %>, "<%=j @hit %>", ship, <%= @sunk %>);
+window.updateMyStats("<%=j raw @myStats %>");
+<%# Even though no enemy stats, update them so the basic layout will display %>
+window.updateEnemyStats("<%=j raw @enemyStats %>");
 
-var my_sunk_ships = <%= @my_sunk_ships == nil ? nil.to_json : "['#{@my_sunk_ships.join('\',\'')}']"  %>;
-window.updateMyStats(<%= @my_hits %>, <%= @my_misses %>, my_sunk_ships);
-
-var enemy_sunk_ships = <%= @enemy_sunk_ships == nil ? nil.to_json : "['#{@enemy_sunk_ships.join('\',\'')}']"%>;
-window.updateEnemyStats(<%=@enemy_hits%>,<%=@enemy_misses%>,enemy_sunk_ships);
-
-// window.yourTurn();
-
-// realistically, this is not happening on the first fire!
-// if <@#= finished %> {
-  // window.gameOver();
-// }
-
-
-
+window.yourTurn();

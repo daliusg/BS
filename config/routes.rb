@@ -2,12 +2,12 @@ Battleship::Application.routes.draw do
   # TODO: update this to specify only the necessary methods, not all generated
   resources :players, only: [:new, :create]
 
-  get "games/index"
-
   controller :games do
+    get :index
     post :setup
     post :attack
     post :start
+    get :enemyFire
   end
 
   root to: 'games#index', as: 'games'

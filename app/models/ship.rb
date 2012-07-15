@@ -4,10 +4,5 @@ class Ship < ActiveRecord::Base
   has_many :my_ships
   
   attr_accessible :name, :length
-
-
-  def getShip (id)
-    
-  end
   
 end

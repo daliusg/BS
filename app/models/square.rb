@@ -6,8 +6,8 @@ class Square < ActiveRecord::Base
 
   # Returns:  ['hit', shipName], ['miss'], or ['already_hit']
   def checkHit 
-    if ship_id
-      if hit
+    if !self.ship_id.blank?
+      if !self.hit.blank?
         return 'already_hit'
       else
         self.hit = true

@@ -4,8 +4,30 @@
 # model remove the '{}' from the fixture names and add the columns immediately
 # below each fixture, per the syntax in the comments below
 #
-one: {}
-# column: value
-#
-two: {}
-#  column: value
+one: 
+  name: "Carrier"
+  length: 5
+
+two: 
+  name: "Battleship"
+  length: 4
+
+three: 
+  name: "Destroyer"
+  length: 3
+
+four: 
+  name: "Submarine 1"
+  length: 2
+
+five: 
+  name: "Submarine 2"
+  length: 2
+
+six: 
+  name: "Patrol 1"
+  length: 1 
+
+seven: 
+  name: "Patrol 2"
+  length: 1 
