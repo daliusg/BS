@@ -3,9 +3,11 @@
 one:
   botID: 1
   player_id: 1
-  turn: 1
 
 two:
-  botID: 1
+  botID: 2
+  player_id: 1 
+
+three:
+  botID: 3
   player_id: 1
-  turn: 1

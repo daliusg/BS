@@ -4,8 +4,20 @@
 # model remove the '{}' from the fixture names and add the columns immediately
 # below each fixture, per the syntax in the comments below
 #
-one: {}
-# column: value
-#
-two: {}
-#  column: value
+no_ship:
+  index: 0
+  ship_id:
+  game_id: 1
+  hit: false
+
+ship_not_hit:
+  index: 1
+  ship_id: 1
+  game_id: 1
+  hit: false
+
+ship_hit:
+  index: 2
+  ship_id: 1
+  game_id: 1
+  hit: true

@@ -26,9 +26,9 @@ ActiveRecord::Schema.define(:version => 20120712123606) do
     t.integer  "index"
     t.integer  "ship_id"
     t.integer  "game_id"
-    t.boolean  "hit"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.boolean  "hit",        :default => false
+    t.datetime "created_at",                    :null => false
+    t.datetime "updated_at",                    :null => false
   end
 
   create_table "games", :force => true do |t|
@@ -75,9 +75,9 @@ ActiveRecord::Schema.define(:version => 20120712123606) do
     t.integer  "index"
     t.integer  "ship_id"
     t.integer  "game_id"
-    t.boolean  "hit"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.boolean  "hit",        :default => false
+    t.datetime "created_at",                    :null => false
+    t.datetime "updated_at",                    :null => false
   end
 
 end

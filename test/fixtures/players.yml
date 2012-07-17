@@ -1,15 +1,15 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  name: MyString
-  email: MyString
-  wins: 1
-  losses: 1
-  average: 9.99
+  name: 'Barrack Obama'
+  email: 'flyingHigh@airfore.one'
+  wins:
+  losses:
+  average:
 
 two:
-  name: MyString
-  email: MyString
-  wins: 1
-  losses: 1
-  average: 9.99
+  name: 'Mahmoud Ahmadinejad'
+  email: 'Idonthave@nukes.not!'
+  wins:
+  losses:
+  average:

@@ -39,6 +39,7 @@ class GamesController < ApplicationController
     if !params[:task]
       # First time through the setup process, set this variable
       session[:ship_setup_state] = 'start'
+      session[:game_id] = nil
     else
       session[:ship_setup_state] = params[:task]
     end
@@ -91,6 +92,8 @@ class GamesController < ApplicationController
       index = getIndex(x,y)
       square = game.squares.find_by_index(index)
 
+      logger.debug("square: #{square.inspect}")
+
       if square.ship_id # ship already present
         @redo = true
       else
@@ -100,7 +103,7 @@ class GamesController < ApplicationController
         # set flags to prompt client script to either place 1 unit ship or
         # prompt for direction
         if @ship[1] == 1  #if length is 1, go ahead and place the ship!
-          game.placeShip(session[:ship_setup_id]+1, session[:ship_coords], 'squares')
+          game.placeShip(session[:ship_setup_id]+1, session[:ship_coords], "me")
           @shipFlag = 'place'
         else  
           @shipFlag = 'direction'
@@ -120,7 +123,7 @@ class GamesController < ApplicationController
       # valid = true
       direction = getDirection(coords, x, y) # Determines N,S,E,W
       if direction <= 3
-        valid = game.placementClear(length, direction, coords, "myBoard")
+        valid = game.placementClear(length, direction, coords, "me")
       else  #user's click not in cardinal direction
         valid = false
       end         
@@ -134,7 +137,7 @@ class GamesController < ApplicationController
       # if valid=true, OK to place ship
       else
         # Have the model record the position of the ship
-        game.placeShip(session[:ship_setup_id]+1, coords, 'squares')
+        game.placeShip(session[:ship_setup_id]+1, coords, "me")
         # setting state to 'place' will cause JS to mark ship on board
         @redo = false
         @shipFlag = 'place'
@@ -194,10 +197,10 @@ class GamesController < ApplicationController
       game.save
       @index = getIndex(x, y)
       # MAIN METHOD TO PROCESS ENEMY FIRE
-      @result = game.firedUpon(x, y)
+      @result = game.fire(x, y, "me")
 
-      @myStats = game.getStats("me").to_json  # my stats converted to json
-      @enemyStats = game.getStats("enemy").to_json  # enemy stats converted to json
+      @myStats = game.getStats("me")  # Statistics pertaining to me
+      @enemyStats = game.getStats("enemy")  # enemy stats
 
       respond_to do |format|
         format.js { } # start.js.erb 
@@ -257,11 +260,11 @@ class GamesController < ApplicationController
         ################     PLAY MY OWN SIMULATED ENEMY                ###########
         else
           @index = getIndex(x,y)
-          @result = game.fireOnEnemy(x, y) 
+          @result = game.fire(x, y, "enemy") 
           if !JSON.parse(@result)["game_status"].nil? then @lost=true end
         end
 
-        @stats = game.getStats("enemy").to_json  # Hash of enemy's stats .to_json
+        @stats = game.getStats("enemy")  # Hash of enemy's stats .to_json
         
         if game.finished
           reset_session
@@ -308,16 +311,16 @@ class GamesController < ApplicationController
       
       @index = getIndex(x,y)
       # MAIN METHOD TO PROCESS ENEMY FIRE
-      @result = game.firedUpon(x, y)
+      @result = game.fire(x, y, "me")
       # Returns a big hash of all stats
-      @stats = game.getStats("me").to_json
+      @stats = game.getStats("me")
 
       respond_to do |format|
         format.js { } # enemyFire.js.erb 
       end
     else
       respond_to do |format|
-        format.js {  } ################## TODO:  NOT YOUR TURN#################
+        format.js {  } 
       end
     end
   end
@@ -369,13 +372,9 @@ class GamesController < ApplicationController
     def getRandomFire
     session[:enemyNotFired] ||= (0..99).to_a
     session[:enemyFired] ||= []
-    logger.debug(":enemyNotFired:  #{session[:enemyNotFired].inspect}")
-    logger.debug(":enemyFired:  #{session[:enemyFired].inspect}")
     arrIndex = rand(session[:enemyNotFired].length)
     fireIndex = session[:enemyNotFired].delete_at(arrIndex)
     session[:enemyFired] << fireIndex
-    logger.debug(":enemyNotFired:  #{session[:enemyNotFired].inspect}")
-    logger.debug(":enemyFired:  #{session[:enemyFired].inspect}")
     return getCoords(fireIndex)
   end
 end
