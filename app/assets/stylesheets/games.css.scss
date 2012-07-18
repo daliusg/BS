@@ -97,6 +97,7 @@ $board-color: #1CE;
   -webkit-box-shadow: -1px 1px 2px 3px #555;
 
   #text, #new_player{
+    width: 85%;
     margin-left: 2%;
     color: black;
     font-size: 12px;
@@ -116,7 +117,7 @@ $board-color: #1CE;
       
       .field{
         float: left;
-        padding-right: 30px;
+        padding-right: 80px;
 
         .player_label{
           font-size: 22px;
@@ -132,7 +133,8 @@ $board-color: #1CE;
   width: 15%;
   top: 50%;
   margin-top: -18px;
-  float: right;
+  // float: right;
+  float: left;
 }
 
 .button2 {

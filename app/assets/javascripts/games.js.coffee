@@ -34,7 +34,7 @@ $(document).ready ->
       # AJAX post to app, controller will figure out what to do next
       $.ajax '/setup',
         type: 'POST'
-        data: { x: coords.x, y: coords.y, ship: window.shipName, task: window.shipFlag }
+        data: { x: coords.x, y: coords.y, task: window.shipFlag }
         dataType: "script" 
 
 
@@ -64,8 +64,8 @@ window.setupMyShips = (ship, shipFlag, redo) ->
   name = ship[0]
   length = parseInt(ship[1])
 
-  # Store name and bowDir globally so when user clicks, we know what inforation
-  # to pass back ???
+  # Store name and bowDir globally so when user clicks, we know what information
+  # to pass back
   window.shipName = name
   window.shipFlag = shipFlag
 

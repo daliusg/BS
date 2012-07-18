@@ -1,13 +1,13 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
-one:
+the_pres:
   name: 'Barrack Obama'
-  email: 'flyingHigh@airfore.one'
+  email: 'flyingHigh@airforce.one'
   wins:
   losses:
   average:
 
-two:
+gringo_loco:
   name: 'Mahmoud Ahmadinejad'
   email: 'Idonthave@nukes.not!'
   wins:

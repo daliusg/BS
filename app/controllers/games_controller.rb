@@ -2,8 +2,13 @@
 class GamesController < ApplicationController
   # before_filter :register
   require "net/http"
+
+  # constant to flag if you are playing against P45 server or my own enemy
+  # true - play P45
+  # false - play my own created enemy, which has it's own board, ships, etc
   P45_WORKING = false
 
+   # GET
   def index
     # TODO: Add logic to check if user has come back to existing game
     #       and accomodate for setting up game wherever they need to be?
@@ -53,6 +58,8 @@ class GamesController < ApplicationController
     elsif session[:ship_setup_id] < 6  &&  session[:ship_setup_state] == 'placed'
       session[:ship_setup_id] += 1
       session[:ship_setup_state] = 'start'
+    # Once all ships have been placed, set the flag which will trigger 
+    # the proper JS response
     elsif session[:ship_setup_id] == 6  &&  session[:ship_setup_state] == 'placed'
       session[:ship_setup_state] = 'all_placed'
     end
@@ -61,8 +68,8 @@ class GamesController < ApplicationController
     # :game_id is the game object's ID number in the DB, not the same as P45_ID
     if !session[:game_id]
       # Create game and link to current player
-      player = current_player
-      game = player.games.create()
+      @player = current_player
+      game = @player.games.create()
       session[:game_id] = game.id
       # Have model set up 100 squares for this game
       game.setupSquares
@@ -72,7 +79,7 @@ class GamesController < ApplicationController
     end  
 
     # Obtain the name & length of the ship we are setting up
-    ships = Ship.find(:all, :select => "name, length", :order => "id")
+    ships = Ship.find(:all, :select => "name, length", :order => "length DESC")
     ships = ships.map { |s| [s.name, s.length] }  #An array of all ships
     @ship = ships[session[:ship_setup_id]]   #[name,length] of current ship
 
@@ -92,10 +99,9 @@ class GamesController < ApplicationController
       index = getIndex(x,y)
       square = game.squares.find_by_index(index)
 
-      logger.debug("square: #{square.inspect}")
-
       if square.ship_id # ship already present
         @redo = true
+        @shipFlag = 'bow'
       else
         @redo = false
         #store x,y coords of bow
@@ -365,6 +371,8 @@ class GamesController < ApplicationController
         else               # ship lies W
           direction =  3
         end
+      else
+        direction = 99    #invalid direction
       end
       return direction
     end

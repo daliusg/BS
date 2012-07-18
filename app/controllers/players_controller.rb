@@ -2,7 +2,7 @@
 class PlayersController < ApplicationController
 
   # GET /players/new
-  # GET /players/new.json
+  # renders new, which renders _form with name/email for submission
   def new
     @player = Player.new
 
@@ -12,15 +12,21 @@ class PlayersController < ApplicationController
   end
 
   # POST /players
-  # POST /players.json
+  # Processes the name/email form filled out
+  # Renders 'create', which displays another button to start fleet setup
   def create
-    # Find player or Create a new one if this one does not exist...
-    
-    # This works - comment out for now so don't have to enter info when testing
-    # @player = Player.find_or_create_by_name_and_email(params[:player]) 
-    
-    # Use this line for development
-    @player = Player.find(1)
+    # Find player or create a new one if this one does not exist...
+    if params[:player]["name"]=="" || params[:player]["email"]==""
+      # Set the player to a generic default, so user can still play
+      # without registering
+      @player = Player.find_or_create_by_name_and_email(
+                                        {name: "Brig. Gen. Jack D. Ripper",
+                                         email: "stopworrying@andlove.thebomb" }) 
+    else
+      # or create/find a player matching the input data
+      @player = Player.find_or_create_by_name_and_email(params[:player]) 
+    end
+
     session[:player_id] = @player.id
 
     respond_to do |format|
