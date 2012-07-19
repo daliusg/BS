@@ -3,16 +3,15 @@ class GamesController < ApplicationController
   # before_filter :register
   require "net/http"
 
-  # constant to flag if you are playing against P45 server or my own enemy
-  # true - play P45
-  # false - play my own created enemy, which has it's own board, ships, etc
-  P45_WORKING = false
-
-   # GET
+  # GET
   def index
-    # TODO: Add logic to check if user has come back to existing game
-    #       and accomodate for setting up game wherever they need to be?
+    # if user comes here, reset the session for now. Maybe in the future 
+    # add logic to allow user to resume game where they left off
     reset_session
+    # flag indicating if you are playing against P45 server or my own enemy
+    # true - play P45
+    # false - play my own created enemy, which has it's own board, ships, etc
+    session[:p45_WORKING] = true
     respond_to do |format|
       format.html { } #index.html.erb
     end
@@ -159,52 +158,48 @@ class GamesController < ApplicationController
         format.js { } #setup.js.erb
     end
   end
-
+  ################  This is the new method with me firing first ##############
   # POST /create
   def start
     # register current player with P45 Bot
     # Battleship Bot is supposed to return id, x, & y coordinates of first fire
-    game = Game.find(session[:game_id])
-    if P45_WORKING
+
+    game = current_game
+    logger.info("===================================================")
+    logger.info("game: #{game}")
+    logger.info("sess_p45: #{session[:p45_WORKING]}")
+    logger.info("===================================================")
+    if session[:p45_WORKING]
       result = register(current_player)
       
-      code = result.code.to_i
-      message = result.message
+      @code = result.code.to_i
+      @message = result.message
       r_body = result.body
       r_JSON = JSON.parse(r_body)
-
-      p45_id = r_JSON["id"].to_i
-      x = r_JSON["x"].to_i #careful: this will turn nil into a 0!
-      y = r_JSON["y"].to_i # !!
+      @p45_id = r_JSON["id"].to_i
 
       logger.info("============Results sent back from P45 ============")
-      logger.info("code: #{code}")
-      logger.info("message: #{message}")
-      logger.info("p45id: #{p45_id}")
-      logger.info("x: #{x}")
-      logger.info("y: #{y}")
+      logger.info("code: #{@code}")
+      logger.info("message: #{@message}")
+      logger.info("p45id: #{@p45_id}")
       logger.info("===================================================")
     end
 
-    if !P45_WORKING
-      x, y = getRandomFire       
-      code = 200
-      p45_id = 101101
+    if !session[:p45_WORKING]
+      @code = 200
+      @message = "OK"
+      @p45_id = 123456
     end
     
     # Check for proper response & correct information sent back
     # and save p45 Bot's game id 
-    if code == 200 && p45_id && x && y
-      game.botID = p45_id
-      if !P45_WORKING
+    if @code == 200 && @p45_id
+      game.botID = @p45_id
+      if !session[:p45_WORKING]
         game.setupEnemyBoard   ### THIS WILL SET UP RANDOM ENEMY BOARD
       end
       game.start
       game.save
-      @index = getIndex(x, y)
-      # MAIN METHOD TO PROCESS ENEMY FIRE
-      @result = game.fire(x, y, "me")
-
       @myStats = game.getStats("me")  # Statistics pertaining to me
       @enemyStats = game.getStats("enemy")  # enemy stats
 
@@ -219,100 +214,85 @@ class GamesController < ApplicationController
     end
 
   end
-  
+
   # POST /attack
   # This method processes a user initiated attack on P45
   def attack
-    # There is a unique case when the game has not started yet and the user
-    # starts firing missiles by clicking on the enemy board. If this happens
-    # ignore the AJAX requests coming in, redirect to index
-    if session[:game_id]
-      game = current_game
-      if !game.finished && game.my_turn  
-        # X & Y coordinates are sent from the client 
-        # they need to be passed on to Battleship Bot server as a NUKE request
-        x = params[:x].to_i
-        y = params[:y].to_i
+    game = current_game
+    if game.my_turn  
+      # X & Y coordinates are sent from the client 
+      # they need to be passed on to Battleship Bot server as a NUKE request
+      x = params[:x].to_i
+      y = params[:y].to_i
 
-        if P45_WORKING   ##############   ONLY DO THIS IF SERVER WORKING ##########
-          @result = fire(game.botID, x, y)
-          
-          # For debugging and seeing what P45 is sending back...
-          code = result.code.to_i
-          message = result.message
-          r_body = result.body
-          r_JSON = JSON.parse(r_body)
+      if session[:p45_WORKING]  ######  ONLY DO THIS IF SERVER WORKING ######
+        response = fire(game.botID, x, y)
+        @index = game.getIndex(x,y)  #for sending back to js
 
-          status = r_JSON["status"]  # hit or miss
-          sunk = r_JSON["sunk"] # name of craft which was sunk
-          game_status = r_JSON["game_status"] #'lost' when game is lost
-          error = r_JSON["error"] # Error message if something went wrong
-          prize = r_JSON["prize"]# Will contain prize when sunk all enemy ships
-          nextX = r_JSON["x"] # I assume this will contain the next x coordinate fired?
-          nextY = r_JSON["y"] # I assume this will contain the next y coordinate fired?
-          logger.debug("status #{status}")
-          logger.debug("sunk #{sunk}")
-          logger.debug("game_status #{game_status}")
-          logger.debug("error #{error}")
-          logger.debug("prize #{prize}")    
-          logger.debug("nextX: #{nextX}")
-          logger.debug("nextY: #{nextY}")
-          # If P45 does indeed send it's next firing, store it in session vars 
-          if !nextX.nil? && !nextY.nil?
-            session[:nextX] = nextX
-            session[:nextY] = nextY
-          end
+        # For debugging and seeing what P45 is sending back...
+        code = response.code.to_i
+        message = response.message
+        @result = response.body
+        r_JSON = JSON.parse(@result)
+
+        status = r_JSON["status"]  # hit or miss
+        sunk = r_JSON["sunk"] # name of craft which was sunk
+        game_status = r_JSON["game_status"] #'lost' when game is lost
+        error = r_JSON["error"] # Error message if something went wrong
+        prize = r_JSON["prize"]# Will contain prize when sunk all enemy ships
+        nextX = r_JSON["x"] # X fired
+        nextY = r_JSON["y"] # Y fired
+        logger.debug("status #{status}")
+        logger.debug("sunk #{sunk}")
+        logger.debug("game_status #{game_status}")
+        logger.debug("error #{error}")
+        logger.debug("prize #{prize}")    
+        logger.debug("nextX: #{nextX}")
+        logger.debug("nextY: #{nextY}")
         
-        ################     PLAY MY OWN SIMULATED ENEMY                ###########
-        else
-          @index = getIndex(x,y)
-          @result = game.fire(x, y, "enemy") 
-          if !JSON.parse(@result)["game_status"].nil? then @lost=true end
+        # If P45 does indeed send it's next firing, store it in session vars 
+        if !nextX.nil? && !nextY.nil?
+          session[:nextX] = nextX.to_i
+          session[:nextY] = nextY.to_i
         end
+        # if p45 lost, set flag to true so JS can display correct message
+        if !game_status.nil? then @lost=true end
 
-        @stats = game.getStats("enemy")  # Hash of enemy's stats .to_json
-        
-        if game.finished
-          reset_session
-        end
-        respond_to do |format|
-          format.js { } #attack.js.erb
-        end
-      else
-        if !game.finished && !game.my_turn
-          respond_to do |format|
-            format.js { 
-              render js: 
-                "$('#enemy_messages').html(\"<p>Tsk, tsk, tsk...  Wait your turn!</p>\");"}
-          end
-        else # Game is finished
-          reset_session
-          respond_to do |format|
-           format.js { redirect_to games_url } 
-          end
-        end
+        # Process some of the returned data to update the model
+        game.processP45response(response)
+     
+      else ########  ELSE PLAY MY OWN SIMULATED ENEMY     #############
+        @index = game.getIndex(x,y)
+        @result = game.fire(x, y, "enemy") 
+        if !JSON.parse(@result)["game_status"].nil? then @lost=true end
       end
-    else  
-      reset_session
+
+      @stats = game.getStats("enemy")  # Hash of enemy's stats .to_json
+      if game.finished
+        reset_session
+      end
       respond_to do |format|
-        format.js { render(:index) { |page| page.redirect_to games_url }}
-        # format.js { redirect_to games_url } 
+        format.js {  } #attack.js.erb
       end
-    end
+    else #game not finished, not my turn (firing out of turn)
+      respond_to do |format|
+        format.js { 
+          render js: 
+            "$('#enemy_messages').html(\"<p>Tsk, tsk, tsk...  Wait your turn!</p>\");"}
+      end
+    end 
   end
 
+  # GET /enemyFire
   # Handles enemy firing
   def enemyFire
     game = current_game
     if !game.my_turn
-      if P45_WORKING
+      if session[:p45_WORKING]
         x = session[:nextX]
         y = session[:nextY]
-      else # !P45_WORKING
+      else # !session[:p45_WORKING]
         x, y = getRandomFire
-        logger.debug("x,y returned from getRandomFire:  #{x}, #{y}")
-        # x = rand(10)
-        # y = rand(10)
       end
       
       @index = getIndex(x,y)
@@ -345,12 +325,16 @@ class GamesController < ApplicationController
       end
     end
 
+    # Sends a 'nuke' request to P45 server, returns JSON response
     def fire (p45ID, x, y)
+      logger.debug("Inside FIRE, p45ID, x, y: #{p45ID}---#{x}---#{y}")
       uri = URI('http://battle.platform45.com/nuke')
       request = Net::HTTP::Post.new(uri.path)
       request.content_type = 'application/json'
       body = {id: p45ID, x: x, y: y}  
       request.body = JSON(body)
+      logger.debug("request:  #{request.inspect}")
+      logger.debug("request.body:  #{request.body}")
       response = Net::HTTP.start(uri.hostname, uri.port) do |http|
         http.request(request)
       end
@@ -378,9 +362,13 @@ class GamesController < ApplicationController
     end
 
     def getRandomFire
+    #array of spots NOT fired upon
     session[:enemyNotFired] ||= (0..99).to_a
+    #array of spots fired upon
     session[:enemyFired] ||= []
+    #Pick random spot from NOT_fired to fire on this time
     arrIndex = rand(session[:enemyNotFired].length)
+    #remove this 'spot' from NOT-fired, move to "fired"
     fireIndex = session[:enemyNotFired].delete_at(arrIndex)
     session[:enemyFired] << fireIndex
     return getCoords(fireIndex)

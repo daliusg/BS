@@ -235,7 +235,6 @@ window.enemyTurn = () ->
   
 window.gameOver = (winner) ->
   window.myTurn = false
-  document.cookie = "_battleship_session=;expires=" + new Date(0).toGMTString
   if winner == "you"
     setTimeout (-> $('#enemy_messages').empty()), 3000
     setTimeout (-> $('#enemy_messages').html("Congratulations!  You WON!!!!")), 3000

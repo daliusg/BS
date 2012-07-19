@@ -3,11 +3,10 @@
                   back and forth volley of the game %>
 
 $('#my_messages').empty();
-<%# Display results of first firing %>
-window.underAttack(<%= @index %>, "<%=j raw @result %>")
 
+<%# Even though no stats yet, have the framework display %>
 window.updateMyStats("<%=j raw @myStats %>");
-<%# Even though no enemy stats, update them so the basic layout will display %>
 window.updateEnemyStats("<%=j raw @enemyStats %>");
 
+<%# Prompt user to take the first fire %>
 window.yourTurn();

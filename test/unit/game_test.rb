@@ -166,7 +166,7 @@ class GameTest < ActiveSupport::TestCase
     game = games(:one)
     game.start
     assert_equal true, game.started
-    assert_equal false, game.my_turn
+    assert_equal true, game.my_turn
   end
 
   test "fire returns correct responses" do

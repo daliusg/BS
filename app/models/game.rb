@@ -122,10 +122,11 @@ class Game < ActiveRecord::Base
   # sets game attributes to appropriate starting values
   def start
     self.started = true
-    self.my_turn = false
+    self.my_turn = true
     self.save
   end
 
+  # Note - this is not used to fire on P45, just my own internal enemy
   # Logic to fire on both me and enemy, arg 'who' determines who
   # status = hit or miss (or 'already_hit')
   # ship - ship (object) that was hit
@@ -201,6 +202,54 @@ class Game < ActiveRecord::Base
       self.finished = true
     end
     return loss
+  end
+
+  # When playing against P45, I don't have to figure out results of firing,
+  # they return that data (hit/miss/sunk/game_status) for me.  I still have 
+  # to update the model with this info though so things like stats stay correct
+  def processP45response(json_result)
+    result = JSON.parse(json_result.body)
+    status = result["status"] 
+    sunk = result["sunk"]
+    game_status = result["game_status"]
+
+    if status == 'hit'
+      self.enemy_hits += 1
+    elsif status == 'miss'
+      self.enemy_misses += 1
+    end
+
+    if !sunk.nil?
+      # P45's naming convention is a bit diffenent, so this is necessary...
+      if sunk == "Patrol Boat"
+        p1 = Ship.find_by_name("Patrol 1")
+        if self.my_ships.find_by_ship_id(p1).sunk
+          sunk = "Patrol 2"
+        else
+          sunk = "Patrol 1"
+        end
+      end
+      if sunk == "Submarine"
+        s1 = Ship.find_by_name("Submarine 1")
+        if self.my_ships.find_by_ship_id(s1).sunk
+          sunk = "Submarine 2"
+        else
+          sunk = "Submarine 1"
+        end
+      end
+      
+      ship = Ship.find_by_name(sunk)
+      eShip = self.enemy_ships.find_by_ship_id(ship)
+      eShip.sunk = true
+      eShip.save
+    end
+
+    if game_status == "lost"
+      self.finished = true
+    else 
+      toggle_turn
+    end
+    self.save
   end
   ############################################################################
   ####################     ACCESSORIES / HELPERS      ########################
