@@ -1,10 +1,10 @@
 $(document).ready ->
   
   # Some global vars
-  window.myTurn = false
-  window.squareCount = 10*10
-  window.width = 39
-  window.border = 1
+  window.myTurn = false       # Keeps track of your turn so you don't misfire
+  window.squareCount = 10*10  
+  window.width = 39           #size of the squares
+  window.border = 1           #square border
   
   #Create the 10x10 squares and add them to the board
   for i in [0...window.squareCount]
@@ -12,8 +12,9 @@ $(document).ready ->
   
   setupEnemyBoard()  
 
+  #############################################################################
   ###################       User triggered events      ########################
-
+  #############################################################################
 
   # When user clicks on his own board, it is for setting up the ships. Must 
   # check what window.shipFlag is set to in order to find out bow or direction
@@ -261,15 +262,22 @@ getCoords = (left, top) ->
     'x': left / (window.width + window.border)
     'y': top / (window.width + window.border)
 
+# Place an item (ship, target) at a specific location 
 placeItem = ($item, leftLoc, topLoc) ->
   $item.css('left', leftLoc)
   $item.css('top', topLoc)
 
+# Indexes range from 0-99, (0 = 0,0, 99 = 9,9)
 indexToCoords = (index) ->
   result = 
     'x':  index % 10 
     'y':  Math.floor(index / 10)
 
+# $ship - actual ship square that will get placed on the board
+# index - element of the ship to place (0->(length-1))
+# The bow and direction are already stored in window vars
+# This method will calculate where a $ship must be placed
+# on the board and then call placeItem to place it
 placeShip = ($ship, index) ->
   #figure out the x&y coordinates we're placing at the moment
   if window.bow.x == window.direction.x   # ship lies N or S

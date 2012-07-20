@@ -95,7 +95,7 @@ class GamesControllerTest < ActionController::TestCase
          task: "bow"}, 
         {ship_setup_id: 6, game_id: @game.id}   #session id's 
     assert_equal 'bow', session[:ship_setup_state]
-    assert_equal 'Patrol 2', assigns(:ship)[0]
+    assert_equal 'Patrol2', assigns(:ship)[0]
     assert_equal false, assigns(:redo)
     assert_equal [67], session[:ship_coords]
     assert_equal 'place', assigns(:shipFlag)
@@ -227,19 +227,19 @@ class GamesControllerTest < ActionController::TestCase
 
   def place_all_my_ships
     ship1 = ships(:one)
-    @game.placeShip(ship1, [0,1,2,3,4], "me")
+    @game.placeShip(ship1.id, [0,1,2,3,4], "me")
     ship2 = ships(:two)
-    @game.placeShip(ship2, [20,21,22,23], "me")
+    @game.placeShip(ship2.id, [20,21,22,23], "me")
     ship3 = ships(:three)
-    @game.placeShip(ship3, [40,41,42], "me")
+    @game.placeShip(ship3.id, [40,41,42], "me")
     ship4 = ships(:four)
-    @game.placeShip(ship4, [60,61], "me")
+    @game.placeShip(ship4.id, [60,61], "me")
     ship5 = ships(:five)
-    @game.placeShip(ship5, [80,81], "me")
+    @game.placeShip(ship5.id, [80,81], "me")
     ship6 = ships(:six)
-    @game.placeShip(ship6, [79], "me")
+    @game.placeShip(ship6.id, [79], "me")
     ship7 = ships(:seven)
-    @game.placeShip(ship7, [99], "me")
+    @game.placeShip(ship7.id, [99], "me")
   end
 
   test "start registers player and renders 'start', p45 not working" do
@@ -332,8 +332,8 @@ class GamesControllerTest < ActionController::TestCase
       @game.fire(x, y, "enemy")
     end
     return last_ship
-
   end
+
   test "attack processes enemy loss correctly when playing against own enemy" do
     setup_game_squares_create_ships
     @game.setupEnemyBoard # This places ships on the enemy board
@@ -344,14 +344,14 @@ class GamesControllerTest < ActionController::TestCase
     xhr :post, :attack, {x: x, y: y}, {game_id: @game, p45_WORKING: false}
     enemy_parsed_results = JSON.parse(assigns(:result))
     assert_equal "hit", enemy_parsed_results["status"]
-    assert_equal "Patrol 2", enemy_parsed_results["sunk"]
+    assert_equal "Patrol2", enemy_parsed_results["sunk"]
     assert_equal "lost", enemy_parsed_results["game_status"]
 
     enemy_parsed_stats = JSON.parse(assigns(:stats))
     assert_equal 18, enemy_parsed_stats["enemy_hits"]
     assert_equal 0, enemy_parsed_stats["enemy_misses"]
-    assert_equal ["Battleship","Carrier","Destroyer","Patrol 1","Patrol 2",
-                  "Submarine 1","Submarine 2"],
+    assert_equal ["Battleship","Carrier","Destroyer","Patrol1","Patrol2",
+                  "Submarine1","Submarine2"],
                    enemy_parsed_stats["enemy_sunk_ships"].sort!
     assert_equal true, enemy_parsed_stats["finished"]
     assert_response :success
@@ -379,7 +379,7 @@ class GamesControllerTest < ActionController::TestCase
     @game.start
     register_player
     xhr :post, :attack, {x: 1, y: 1}, {game_id: @game, p45_WORKING: true}
-    enemy_parsed_results = JSON.parse(assigns(:result).body)
+    enemy_parsed_results = JSON.parse(assigns(:result))
     # status = enemy_parsed_results["status"]
     assert_equal true, ["hit","miss"].include?(enemy_parsed_results["status"])
     enemy_parsed_stats = JSON.parse(assigns(:stats))
@@ -407,7 +407,6 @@ class GamesControllerTest < ActionController::TestCase
     elsif parsed_results["status"] =="miss"
       assert_equal 1, parsed_stats["my_misses"]
     end
-    assert_equal [], parsed_stats["my_sunk_ships"]
     assert_equal false, parsed_stats["finished"]
     assert_response :success
     assert_template :enemyFire

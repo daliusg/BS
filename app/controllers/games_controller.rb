@@ -1,8 +1,8 @@
-
 class GamesController < ApplicationController
-  # before_filter :register
   require "net/http"
 
+  #############################################################################
+  #############################################################################
   # GET
   def index
     # if user comes here, reset the session for now. Maybe in the future 
@@ -16,7 +16,9 @@ class GamesController < ApplicationController
       format.html { } #index.html.erb
     end
   end
-  
+
+  #############################################################################
+  #############################################################################
   # POST/setup
   def setup
     # This method is called many times during the ship setup process.  It 
@@ -158,31 +160,22 @@ class GamesController < ApplicationController
         format.js { } #setup.js.erb
     end
   end
-  ################  This is the new method with me firing first ##############
+
+  #############################################################################
+  #############################################################################
   # POST /create
   def start
     # register current player with P45 Bot
     # Battleship Bot is supposed to return id, x, & y coordinates of first fire
 
     game = current_game
-    logger.info("===================================================")
-    logger.info("game: #{game}")
-    logger.info("sess_p45: #{session[:p45_WORKING]}")
-    logger.info("===================================================")
     if session[:p45_WORKING]
       result = register(current_player)
-      
       @code = result.code.to_i
       @message = result.message
       r_body = result.body
       r_JSON = JSON.parse(r_body)
       @p45_id = r_JSON["id"].to_i
-
-      logger.info("============Results sent back from P45 ============")
-      logger.info("code: #{@code}")
-      logger.info("message: #{@message}")
-      logger.info("p45id: #{@p45_id}")
-      logger.info("===================================================")
     end
 
     if !session[:p45_WORKING]
@@ -215,6 +208,8 @@ class GamesController < ApplicationController
 
   end
 
+  #############################################################################
+  #############################################################################
   # POST /attack
   # This method processes a user initiated attack on P45
   def attack
@@ -232,23 +227,13 @@ class GamesController < ApplicationController
         # For debugging and seeing what P45 is sending back...
         code = response.code.to_i
         message = response.message
-        @result = response.body
+        @result = response.body  #  THIS VAR IS PASSED TO CLIENT JS
         r_JSON = JSON.parse(@result)
 
-        status = r_JSON["status"]  # hit or miss
-        sunk = r_JSON["sunk"] # name of craft which was sunk
+        # Extract some data from the result that needs to be used in controller
         game_status = r_JSON["game_status"] #'lost' when game is lost
-        error = r_JSON["error"] # Error message if something went wrong
-        prize = r_JSON["prize"]# Will contain prize when sunk all enemy ships
         nextX = r_JSON["x"] # X fired
         nextY = r_JSON["y"] # Y fired
-        logger.debug("status #{status}")
-        logger.debug("sunk #{sunk}")
-        logger.debug("game_status #{game_status}")
-        logger.debug("error #{error}")
-        logger.debug("prize #{prize}")    
-        logger.debug("nextX: #{nextX}")
-        logger.debug("nextY: #{nextY}")
         
         # If P45 does indeed send it's next firing, store it in session vars 
         if !nextX.nil? && !nextY.nil?
@@ -259,7 +244,7 @@ class GamesController < ApplicationController
         if !game_status.nil? then @lost=true end
 
         # Process some of the returned data to update the model
-        game.processP45response(response)
+        game.processP45response(@result)
      
       else ########  ELSE PLAY MY OWN SIMULATED ENEMY     #############
         @index = game.getIndex(x,y)
@@ -283,6 +268,8 @@ class GamesController < ApplicationController
     end 
   end
 
+  #############################################################################
+  #############################################################################
   # GET /enemyFire
   # Handles enemy firing
   def enemyFire
@@ -311,6 +298,8 @@ class GamesController < ApplicationController
     end
   end
 
+  #############################################################################
+  #############################################################################
   private
     
     # This method registers the player with the P45 Bot, returs the JSON response
@@ -327,14 +316,11 @@ class GamesController < ApplicationController
 
     # Sends a 'nuke' request to P45 server, returns JSON response
     def fire (p45ID, x, y)
-      logger.debug("Inside FIRE, p45ID, x, y: #{p45ID}---#{x}---#{y}")
       uri = URI('http://battle.platform45.com/nuke')
       request = Net::HTTP::Post.new(uri.path)
       request.content_type = 'application/json'
       body = {id: p45ID, x: x, y: y}  
       request.body = JSON(body)
-      logger.debug("request:  #{request.inspect}")
-      logger.debug("request.body:  #{request.body}")
       response = Net::HTTP.start(uri.hostname, uri.port) do |http|
         http.request(request)
       end

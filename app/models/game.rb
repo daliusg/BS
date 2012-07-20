@@ -140,7 +140,7 @@ class Game < ActiveRecord::Base
 
     if hit == 'hit'
       (who=="me") ? self.my_hits+=1 : self.enemy_hits+=1
-      ship = target.ship 
+      ship = target.ship
       ships = (who == "me") ? 'my_ships' : 'enemy_ships'
       if processHit(ship, who) #processHit returns T/F for sunk
         sunk = ship.name
@@ -204,15 +204,15 @@ class Game < ActiveRecord::Base
     return loss
   end
 
-  # When playing against P45, I don't have to figure out results of firing,
-  # they return that data (hit/miss/sunk/game_status) for me.  I still have 
-  # to update the model with this info though so things like stats stay correct
-  def processP45response(json_result)
-    result = JSON.parse(json_result.body)
+  # When playing against P45, I don't have to figure out results of firing b/c
+  # they return that data (hit/miss/sunk/game_status) for me.  I still have to
+  # update the model with this info though so things like statistics are valid
+  def processP45response(response)
+    result = JSON.parse(response)
     status = result["status"] 
     sunk = result["sunk"]
     game_status = result["game_status"]
-
+    
     if status == 'hit'
       self.enemy_hits += 1
     elsif status == 'miss'
@@ -222,32 +222,31 @@ class Game < ActiveRecord::Base
     if !sunk.nil?
       # P45's naming convention is a bit diffenent, so this is necessary...
       if sunk == "Patrol Boat"
-        p1 = Ship.find_by_name("Patrol 1")
-        if self.my_ships.find_by_ship_id(p1).sunk
-          sunk = "Patrol 2"
+        p1 = Ship.find_by_name("Patrol1")
+        if self.enemy_ships.find_by_ship_id(p1).sunk == true
+          sunk = "Patrol2"
         else
-          sunk = "Patrol 1"
+          sunk = "Patrol1"
         end
       end
       if sunk == "Submarine"
-        s1 = Ship.find_by_name("Submarine 1")
-        if self.my_ships.find_by_ship_id(s1).sunk
-          sunk = "Submarine 2"
+        s1 = Ship.find_by_name("Submarine1")
+        if self.enemy_ships.find_by_ship_id(s1).sunk == true
+          sunk = "Submarine2"
         else
-          sunk = "Submarine 1"
+          sunk = "Submarine1"
         end
       end
-      
+
       ship = Ship.find_by_name(sunk)
       eShip = self.enemy_ships.find_by_ship_id(ship)
       eShip.sunk = true
       eShip.save
     end
 
+    toggle_turn
     if game_status == "lost"
       self.finished = true
-    else 
-      toggle_turn
     end
     self.save
   end

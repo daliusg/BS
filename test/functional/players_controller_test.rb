@@ -24,7 +24,7 @@ class PlayersControllerTest < ActionController::TestCase
 
   test "sets up generic player if you do not enter name/email" do
     xhr :post, :create, player: {name: "", email: ""}
-    assert_equal "Brig. Gen. Jack D. Ripper", assigns(:player).name
+    assert_equal "Dr. Strangelove", assigns(:player).name
     assert_equal "stopworrying@andlove.thebomb", assigns(:player).email
     assert_response :success
     assert_template :create

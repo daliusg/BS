@@ -1,4 +1,3 @@
-
 class PlayersController < ApplicationController
 
   # GET /players/new
@@ -20,7 +19,7 @@ class PlayersController < ApplicationController
       # Set the player to a generic default, so user can still play
       # without registering
       @player = Player.find_or_create_by_name_and_email(
-                                        {name: "Brig. Gen. Jack D. Ripper",
+                                        {name: "Dr. Strangelove",
                                          email: "stopworrying@andlove.thebomb" }) 
     else
       # or create/find a player matching the input data
@@ -33,5 +32,4 @@ class PlayersController < ApplicationController
         format.js { } # create.js.erb
     end
   end
-
 end

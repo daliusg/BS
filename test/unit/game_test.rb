@@ -287,6 +287,34 @@ class GameTest < ActiveSupport::TestCase
     assert_equal true, game.checkForLoss("me")
   end
 
+  test "processP45response miss" do
+    game = games(:one)
+    game.botID = 1234
+    game.save
+    game.start
+    response = '{"status":"miss", "x":3, "y":2}'
+    game.processP45response(response)
+    assert_equal 0, game.enemy_hits
+    assert_equal 1, game.enemy_misses
+    assert_equal false, game.my_turn
+  end
+
+  test "processP45response hit, sink, and win" do
+    game = games(:one)
+    game.botID = 1234
+    game.save
+    game.start
+    game.createShips
+    response = '{"status":"hit", "sunk":"Patrol Boat", 
+                    "game_status":"lost", "x":3, "y":2}'
+    game.processP45response(response)
+    assert_equal 1, game.enemy_hits
+    assert_equal 0, game.enemy_misses
+    assert_equal true, game.sunkShips("enemy").include?("Patrol1")
+    assert_equal false, game.my_turn
+    assert_equal true, game.finished
+  end
+
   test "sunkShips returns correct list of sunk ships" do
     game = games(:one)
     game.createShips

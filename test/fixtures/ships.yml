@@ -17,17 +17,17 @@ three:
   length: 3
 
 four: 
-  name: "Submarine 1"
+  name: "Submarine1"
   length: 2
 
 five: 
-  name: "Submarine 2"
+  name: "Submarine2"
   length: 2
 
 six: 
-  name: "Patrol 1"
+  name: "Patrol1"
   length: 1 
 
 seven: 
-  name: "Patrol 2"
+  name: "Patrol2"
   length: 1 

@@ -1,2 +1,18 @@
-Use this README file to introduce your application and point to useful places in the API for learning more.
-Run "rake doc:app" to generate API documentation for your models, controllers, helpers, and libraries.
+BATTLESHIP APP
+Author: Dalius Gilvydis
+Email: daliusg@yahoo.com
+Date: July 20, 2012
+
+About: This app allows you to play a game of battleship against the Platform 45
+        Battleship server.  The game starts with you entering your name/email,
+        followed by setting up your ships on the playing board, followed by
+        actually playing the game.  You go first, by clicking on an enemy square
+        that you'd like to fire upon.  The firing is then processed, the results
+        displayed, and then it's your turn to get fired UPON. After those
+        results are displayed, it's your turn to fire again.  The game goes
+        on like this until somebody wins/loses. 
+
+Note: This game can be played against the Platform 45 Server or against it's
+      own internal enemy. You can change who you are playing against 
+      by setting session[:p45_WORKING] to true or false at the top of the 
+      game_controller.rb file.
